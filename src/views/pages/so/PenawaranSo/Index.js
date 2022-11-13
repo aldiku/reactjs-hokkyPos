@@ -11,13 +11,17 @@ import {
     Form, 
     FormGroup, 
     Label, 
-    Input 
+    Input, 
+    ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem
 } from 'reactstrap';
 import { Link } from "react-router-dom";
 import axios from 'axios';
 import ToolkitProvider from 'react-bootstrap-table2-toolkit';
 import BootstrapTable from "react-bootstrap-table-next";
 import paginationFactory from "react-bootstrap-table2-paginator";
+
+import * as FileSaver from "file-saver";
+import * as XLSX from "xlsx";
 
 const PenawaranSo = () => {
   const token = localStorage.token;
@@ -28,10 +32,14 @@ const PenawaranSo = () => {
   const [allPenawaranSo, setAllPenawaranSo] = useState([]);
   const [status, setStatus] = useState(0);
   const [description, setDescription] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [statusph, setStatusph] = useState("");
   const [page, setPage] = useState(1);
   const [perPage, setPerpage] = useState(10);
   const [totalItem, setTotalItem] = useState(0);
   const [currentSort, setCurrentSort] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   
   let paginationOption = {
     page: page,
@@ -69,30 +77,88 @@ const PenawaranSo = () => {
     ),
   }
 
-  const updateDataTable = (page, perPage, sort, status, description) => {
-    getPenawaranSo(page, perPage, sort, status, description);
+  const updateDataTable = (page, perPage, sort, status, description,start,end,statusph) => {
     setPage(page);
     setPerpage(perPage);
     setRowIndex((page - 1) * perPage);
     setCurrentSort(sort);
     setStatus(status);
     setDescription(description);
+    setStart(start);
+    setEnd(end);
+    setStatusph(statusph);
   }
 
   const handleTableChange = (type, { sortField, sortOrder }) => {
     if (type === "sort") {
       let sort = `${sortField} ${sortOrder}`
-      updateDataTable(page, perPage, sort,  status, description)
+      updateDataTable(page, perPage, sort,  status, description,start,end,statusph)
     }
   }
 
+  const downloadExcel = (apiData)=> {
+      var fileName = 'Data-order'
+      // get data all
+      let filter = { 
+        page: page, 
+        per_page: 1000,
+        warehouse_id : parseInt(warehouse)
+      };
+      if (status !== null) {
+        filter = Object.assign(filter, { status: status })
+      }
+      if (description !== null) {
+          filter = Object.assign(filter, { keterangan: description })
+      }
+      if (start !== '') {
+        filter = Object.assign(filter, { start_date: start })
+      }
+      if (end !== '') {
+        filter = Object.assign(filter, { end_date: end })
+      }
+      if (statusph !== '') {
+        filter = Object.assign(filter, { statusph: statusph })
+      }
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+      axios
+        .post(`${process.env.REACT_APP_API_BASE_URL}/sales-order/page`, filter, {
+          headers,
+        })
+        .then((res) => {
+          var apiData = res.data.response.map((i)=>{
+            return {
+              'So Code' : i.so_code,
+              'Address' : i.manual_address,
+              'Total Barang' : i.qty_total,
+              'Harga Total' : i.price_total,
+              'Diskon Total' : i.diskon_total,
+              'Harga ongkir' : i.ongkir,
+              'Harga Payment' : i.payment_total,
+              'Keterangan' : i.keterangan,
+            }
+          });
+          const ws = XLSX.utils.json_to_sheet(apiData);
+          const fileType ="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8";
+          const fileExtension = ".xlsx";
+          const wb = { Sheets: { data: ws }, SheetNames: ["data"] };
+          const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+          const data = new Blob([excelBuffer], { type: fileType });
+          FileSaver.saveAs(data, fileName + fileExtension);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+  }
   
   useEffect(() => {
     getPenawaranSo(page, perPage, currentSort);
   }, []);
 
   // fungsi dari ambil data
-  const getPenawaranSo = async (page, perPage, currentSort, status = null, keterangan = null) => {
+  const getPenawaranSo = async (page, perPage, currentSort, status = null, keterangan = null,start,end,statusph) => {
     
     let filter = { 
       
@@ -105,6 +171,15 @@ const PenawaranSo = () => {
     }
     if (keterangan !== null) {
         filter = Object.assign(filter, { keterangan: keterangan })
+    }
+    if (start !== '') {
+      filter = Object.assign(filter, { start_date: start })
+    }
+    if (end !== '') {
+      filter = Object.assign(filter, { end_date: end })
+    }
+    if (statusph !== '') {
+      filter = Object.assign(filter, { statusph: statusph })
     }
     const data = filter;
     const headers = {
@@ -150,7 +225,50 @@ const PenawaranSo = () => {
               <CardBody>
                       <Form>
                         <Row md="12">
-                          <Col md="3">
+                          <Col >
+                            <FormGroup>
+                              <Label>Start</Label>
+                              <Input
+                                className="form-control-alternative"
+                                name="start"
+                                type="date"
+                                value={start}
+                                onChange={e => updateDataTable(1, perPage, currentSort, status, description,e.target.value,end,statusph)}
+                              >
+                              </Input>
+                            </FormGroup>
+                          </Col>
+                          <Col >
+                            <FormGroup>
+                              <Label>End</Label>
+                              <Input
+                                className="form-control-alternative"
+                                name="end"
+                                type="date"
+                                value={end}
+                                onChange={e => updateDataTable(1, perPage, currentSort, status, description,start,e.target.value,statusph)}
+                              >
+                              </Input>
+                            </FormGroup>
+                          </Col>
+                          <Col >
+                            <FormGroup>
+                              <Label>Status PH</Label>
+                              <Input
+                                className="form-control-alternative"
+                                name="statusph"
+                                type="select"
+                                value={statusph}
+                                onChange={e => updateDataTable(1, perPage, currentSort, status, description,start,end,e.target.value)}
+                              >
+                                 <option value="">--all--</option>
+                                <option value="3">Proses</option>
+                                <option value="4">Ditolak</option>
+                                <option value="5">Disetujui</option>
+                              </Input>
+                            </FormGroup>
+                          </Col>
+                          <Col >
                             <FormGroup>
                               <Label htmlFor="exampleFormControlSelect3">Status</Label>
                               <Input
@@ -158,7 +276,7 @@ const PenawaranSo = () => {
                                 name="Tipe So"
                                 type="select"
                                 value={status}
-                                onChange={e => updateDataTable(1, perPage, currentSort, e.target.value, description)}
+                                onChange={e => updateDataTable(1, perPage, currentSort, e.target.value, description,start,end,statusph)}
                               >
                                 <option value="">Pilih Sales Order</option>
                                 <option value="1">Cahsier</option>
@@ -167,6 +285,18 @@ const PenawaranSo = () => {
                                 <option value="4">Canvaser</option>
                               </Input>
                             </FormGroup>
+                          </Col>
+                          <Col className='d-inline'>
+                            <Button type='button' onClick={() => updateDataTable(1, perPage, currentSort,status, description,start,end,statusph)} className="btn btn-info">Filter</Button>
+                            <ButtonDropdown isOpen={dropdownOpen} toggle={() => setDropdownOpen(true)}>
+                              <DropdownToggle caret color="primary">
+                                Download
+                              </DropdownToggle>
+                              <DropdownMenu>
+                                <DropdownItem onClick={()=> downloadExcel(allPenawaranSo)}>Excel</DropdownItem>
+                                <DropdownItem>PDF</DropdownItem>
+                              </DropdownMenu>
+                            </ButtonDropdown>
                           </Col>
                         </Row>
                       </Form>
