@@ -103,7 +103,7 @@ const PenawaranSo = () => {
   }, []);
 
   // fungsi dari ambil data
-  const getPenawaranSo = async (page, perPage, currentSort, status = null, keterangan = null,start,end,statusph) => {
+  const getPenawaranSo = async (page, perPage, currentSort, status = null, keterangan = null,start='',end='',statusph='') => {
     
     let filter = { 
       
@@ -146,14 +146,10 @@ const PenawaranSo = () => {
       });
   };
 
-  // const reset = () => {
-  //   setStatus("");
-  //   setDescription("");
-  //   updateDataTable(1, perPage, currentSort, "", "");
-  // }
+
   const downloadExcel = async ()=> {
     var fileName = 'Data-order'
-    // get data all
+    // get data all by filter
     var filter = { 
       page: page, 
       per_page: 1000,
@@ -226,7 +222,7 @@ const PenawaranSo = () => {
               <CardBody>
                       <Form>
                         <Row md="12">
-                        <Col md="3">
+                        <Col md="" sm="6">
                             <FormGroup>
                               <Label>Start</Label>
                               <Input
@@ -239,7 +235,7 @@ const PenawaranSo = () => {
                               </Input>
                             </FormGroup>
                           </Col>
-                          <Col md="3">
+                          <Col md="" sm="6">
                             <FormGroup>
                               <Label>End</Label>
                               <Input
@@ -252,7 +248,7 @@ const PenawaranSo = () => {
                               </Input>
                             </FormGroup>
                           </Col>
-                          <Col md="3">
+                          <Col md="" sm="6">
                             <FormGroup>
                               <Label>Status PH</Label>
                               <Input
@@ -269,7 +265,7 @@ const PenawaranSo = () => {
                               </Input>
                             </FormGroup>
                           </Col>
-                          <Col md="3">
+                          <Col md="" sm="6">
                             <FormGroup>
                               <Label htmlFor="exampleFormControlSelect3">Status</Label>
                               <Input
@@ -288,7 +284,7 @@ const PenawaranSo = () => {
                             </FormGroup>
                           </Col>
                           <Col>
-                            <Button type='button' onClick={e => updateDataTable(1, perPage, currentSort,status, description,start,end,statusph)} className="btn btn-info">Filter</Button>
+                            <Button type='button' onClick={e => updateDataTable(1, perPage, currentSort,status, description,start,end,statusph)} className="btn btn-info"><i class="fa fa-filter"></i></Button>
                             <ButtonDropdown isOpen={dropdownOpen} toggle={() => setDropdownOpen(true)}>
                               <DropdownToggle caret color="primary">
                                 Download
