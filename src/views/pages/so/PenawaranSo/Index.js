@@ -23,6 +23,9 @@ import paginationFactory from "react-bootstrap-table2-paginator";
 import * as FileSaver from "file-saver";
 import * as XLSX from "xlsx";
 
+import {PDFDownloadLink} from '@react-pdf/renderer';
+import PdfReportSo from './PdfReportSo';
+
 const PenawaranSo = () => {
   const token = localStorage.token;
   const warehouse = parseInt(localStorage.warehouse);
@@ -99,7 +102,7 @@ const PenawaranSo = () => {
 
   
   useEffect(() => {
-    getPenawaranSo(page, perPage, currentSort);
+    // getPenawaranSo(page, perPage, currentSort);
   }, []);
 
   // fungsi dari ambil data
@@ -284,14 +287,22 @@ const PenawaranSo = () => {
                             </FormGroup>
                           </Col>
                           <Col>
-                            <Button type='button' onClick={e => updateDataTable(1, perPage, currentSort,status, description,start,end,statusph)} className="btn btn-info"><i class="fa fa-filter"></i></Button>
+                            <Button type='button' onClick={e => updateDataTable(1, perPage, currentSort,status, description,start,end,statusph)} className="btn btn-info"><i className="fa fa-filter"></i></Button>
                             <ButtonDropdown isOpen={dropdownOpen} toggle={() => setDropdownOpen(true)}>
                               <DropdownToggle caret color="primary">
                                 Download
                               </DropdownToggle>
                               <DropdownMenu>
                                 <DropdownItem onClick={()=> {downloadExcel(allPenawaranSo)}}>Excel</DropdownItem>
-                                <DropdownItem>PDF</DropdownItem>
+                                <DropdownItem>
+                                  <PDFDownloadLink
+                                    document={<PdfReportSo data={{status,start,end,statusph}} />}
+                                    fileName="Report Order.pdf"
+                                    style={{color: '#000'}}>
+                                      PDF
+                                      </PDFDownloadLink>
+                                </DropdownItem>
+                                
                               </DropdownMenu>
                             </ButtonDropdown>
                           </Col>
