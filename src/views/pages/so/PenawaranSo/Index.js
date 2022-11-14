@@ -32,13 +32,13 @@ const PenawaranSo = () => {
   const [allPenawaranSo, setAllPenawaranSo] = useState([]);
   const [status, setStatus] = useState(0);
   const [description, setDescription] = useState("");
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
-  const [statusph, setStatusph] = useState("");
   const [page, setPage] = useState(1);
   const [perPage, setPerpage] = useState(10);
   const [totalItem, setTotalItem] = useState(0);
   const [currentSort, setCurrentSort] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [statusph, setStatusph] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
   let paginationOption = {
@@ -87,6 +87,7 @@ const PenawaranSo = () => {
     setStart(start);
     setEnd(end);
     setStatusph(statusph);
+    getPenawaranSo(page, perPage, sort, status, description,start,end,statusph);
   }
 
   const handleTableChange = (type, { sortField, sortOrder }) => {
@@ -96,62 +97,6 @@ const PenawaranSo = () => {
     }
   }
 
-  const downloadExcel = (apiData)=> {
-      var fileName = 'Data-order'
-      // get data all
-      let filter = { 
-        page: page, 
-        per_page: 1000,
-        warehouse_id : parseInt(warehouse)
-      };
-      if (status !== null) {
-        filter = Object.assign(filter, { status: status })
-      }
-      if (description !== null) {
-          filter = Object.assign(filter, { keterangan: description })
-      }
-      if (start !== '') {
-        filter = Object.assign(filter, { start_date: start })
-      }
-      if (end !== '') {
-        filter = Object.assign(filter, { end_date: end })
-      }
-      if (statusph !== '') {
-        filter = Object.assign(filter, { statusph: statusph })
-      }
-      const headers = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-      axios
-        .post(`${process.env.REACT_APP_API_BASE_URL}/sales-order/page`, filter, {
-          headers,
-        })
-        .then((res) => {
-          var apiData = res.data.response.map((i)=>{
-            return {
-              'So Code' : i.so_code,
-              'Address' : i.manual_address,
-              'Total Barang' : i.qty_total,
-              'Harga Total' : i.price_total,
-              'Diskon Total' : i.diskon_total,
-              'Harga ongkir' : i.ongkir,
-              'Harga Payment' : i.payment_total,
-              'Keterangan' : i.keterangan,
-            }
-          });
-          const ws = XLSX.utils.json_to_sheet(apiData);
-          const fileType ="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8";
-          const fileExtension = ".xlsx";
-          const wb = { Sheets: { data: ws }, SheetNames: ["data"] };
-          const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-          const data = new Blob([excelBuffer], { type: fileType });
-          FileSaver.saveAs(data, fileName + fileExtension);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-  }
   
   useEffect(() => {
     getPenawaranSo(page, perPage, currentSort);
@@ -206,6 +151,62 @@ const PenawaranSo = () => {
   //   setDescription("");
   //   updateDataTable(1, perPage, currentSort, "", "");
   // }
+  const downloadExcel = async ()=> {
+    var fileName = 'Data-order'
+    // get data all
+    var filter = { 
+      page: page, 
+      per_page: 1000,
+      warehouse_id : parseInt(warehouse)
+    };
+    if (status !== null) {
+      filter = Object.assign(filter, { status: status })
+    }
+    if (description !== null) {
+        filter = Object.assign(filter, { keterangan: description })
+    }
+    if (start !== '') {
+      filter = Object.assign(filter, { start_date: start })
+    }
+    if (end !== '') {
+      filter = Object.assign(filter, { end_date: end })
+    }
+    if (statusph !== '') {
+      filter = Object.assign(filter, { statusph: statusph })
+    }
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+    axios
+      .post(`${process.env.REACT_APP_API_BASE_URL}/sales-order/page`, filter, {
+        headers,
+      })
+      .then((res) => {
+        var apiData = res.data.response.map((i)=>{
+          return {
+            'So Code' : i.so_code,
+            'Address' : i.manual_address,
+            'Total Barang' : i.qty_total,
+            'Harga Total' : i.price_total,
+            'Diskon Total' : i.diskon_total,
+            'Harga ongkir' : i.ongkir,
+            'Harga Payment' : i.payment_total,
+            'Keterangan' : i.keterangan,
+          }
+        });
+        const ws = XLSX.utils.json_to_sheet(apiData);
+        const fileType ="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8";
+        const fileExtension = ".xlsx";
+        const wb = { Sheets: { data: ws }, SheetNames: ["data"] };
+        const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        const data = new Blob([excelBuffer], { type: fileType });
+        FileSaver.saveAs(data, fileName + fileExtension);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
 
   return (
     <div>
@@ -225,7 +226,7 @@ const PenawaranSo = () => {
               <CardBody>
                       <Form>
                         <Row md="12">
-                          <Col >
+                        <Col md="3">
                             <FormGroup>
                               <Label>Start</Label>
                               <Input
@@ -238,7 +239,7 @@ const PenawaranSo = () => {
                               </Input>
                             </FormGroup>
                           </Col>
-                          <Col >
+                          <Col md="3">
                             <FormGroup>
                               <Label>End</Label>
                               <Input
@@ -251,7 +252,7 @@ const PenawaranSo = () => {
                               </Input>
                             </FormGroup>
                           </Col>
-                          <Col >
+                          <Col md="3">
                             <FormGroup>
                               <Label>Status PH</Label>
                               <Input
@@ -261,14 +262,14 @@ const PenawaranSo = () => {
                                 value={statusph}
                                 onChange={e => updateDataTable(1, perPage, currentSort, status, description,start,end,e.target.value)}
                               >
-                                 <option value="">--all--</option>
-                                <option value="3">Proses</option>
-                                <option value="4">Ditolak</option>
-                                <option value="5">Disetujui</option>
+                                  <option value="">--all--</option>
+                                  <option value="3">Proses</option>
+                                  <option value="4">Ditolak</option>
+                                  <option value="5">Disetujui</option>
                               </Input>
                             </FormGroup>
                           </Col>
-                          <Col >
+                          <Col md="3">
                             <FormGroup>
                               <Label htmlFor="exampleFormControlSelect3">Status</Label>
                               <Input
@@ -286,14 +287,14 @@ const PenawaranSo = () => {
                               </Input>
                             </FormGroup>
                           </Col>
-                          <Col className='d-inline'>
-                            <Button type='button' onClick={() => updateDataTable(1, perPage, currentSort,status, description,start,end,statusph)} className="btn btn-info">Filter</Button>
+                          <Col>
+                            <Button type='button' onClick={e => updateDataTable(1, perPage, currentSort,status, description,start,end,statusph)} className="btn btn-info">Filter</Button>
                             <ButtonDropdown isOpen={dropdownOpen} toggle={() => setDropdownOpen(true)}>
                               <DropdownToggle caret color="primary">
                                 Download
                               </DropdownToggle>
                               <DropdownMenu>
-                                <DropdownItem onClick={()=> downloadExcel(allPenawaranSo)}>Excel</DropdownItem>
+                                <DropdownItem onClick={()=> {downloadExcel(allPenawaranSo)}}>Excel</DropdownItem>
                                 <DropdownItem>PDF</DropdownItem>
                               </DropdownMenu>
                             </ButtonDropdown>
