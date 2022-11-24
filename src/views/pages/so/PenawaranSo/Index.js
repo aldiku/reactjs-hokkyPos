@@ -19,7 +19,7 @@ import axios from 'axios';
 import ToolkitProvider from 'react-bootstrap-table2-toolkit';
 import BootstrapTable from "react-bootstrap-table-next";
 import paginationFactory from "react-bootstrap-table2-paginator";
-
+import logo from '../../../../assets/img/brand/Hokky1.png'
 import * as FileSaver from "file-saver";
 import * as XLSX from "xlsx";
 
@@ -151,7 +151,8 @@ const PenawaranSo = () => {
 
 
   const downloadExcel = async ()=> {
-    var fileName = 'Data-order'
+    var fileName = 'Data-order';
+    const fs = require('fs');
     // get data all by filter
     var filter = { 
       page: page, 
@@ -182,25 +183,149 @@ const PenawaranSo = () => {
         headers,
       })
       .then((res) => {
-        var apiData = res.data.response.map((i)=>{
-          return {
-            'So Code' : i.so_code,
-            'Address' : i.manual_address,
-            'Total Barang' : i.qty_total,
-            'Harga Total' : i.price_total,
-            'Diskon Total' : i.diskon_total,
-            'Harga ongkir' : i.ongkir,
-            'Harga Payment' : i.payment_total,
-            'Keterangan' : i.keterangan,
+        var apiData = res.data.response;
+        var tableToExcel = (function() {
+          var uri = 'data:application/vnd.ms-excel;base64,',
+            template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--><meta http-equiv="content-type" content="text/plain; charset=UTF-8"/></head><body><table>{table}</table></body></html>',
+            base64 = function(s) {
+              return window.btoa(unescape(encodeURIComponent(s)))
+            },
+            format = function(s, c) {
+              return s.replace(/{(\w+)}/g, function(m, p) {
+                return c[p];
+              })
+            }
+          return function(table, name) {
+            var heading = 'Laporan Sales Order';
+            var imgsrc1 = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhAVKx5R3RdjeXQuRdKan2RNLsZn2U4qXYOgU4jqILz6u6MLSzlvzY1b5x9Xiz4sKHhM0UJ1NKKoFVx6ZEI8JqgANlrZ8KwCJ2j9pOmJN-e50-HzVhTFRvEahjCJB51O4oMmJ25V2yQtYOGfxV2b7C2aT9VKBruh0_znTbORz66pu9P47DMB5aP4SuF/s320/Hokky1.png';
+            var items = '';
+            var i ;
+            for(i=0; i < apiData.length; i++){
+              items += `
+              <tr style="border: 1px solid black">
+                  <td>${apiData[i].so_code}</td>
+                  <td>${apiData[i].manual_address}</td>
+                  <td>${apiData[i].qty_total}</td>
+                  <td>${apiData[i].price_total}</td>
+                  <td>${apiData[i].diskon_total}</td>
+                  <td>${apiData[i].ongkir}</td>
+                  <td>${apiData[i].payment_total}</td>
+                  <td>${apiData[i].keterangan}</td>
+                </tr>
+              `
+            }
+            var table = `
+            <table className="table table-striped" id="account_table">
+                <tbody>
+                  <tr>
+                    <td><img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhAVKx5R3RdjeXQuRdKan2RNLsZn2U4qXYOgU4jqILz6u6MLSzlvzY1b5x9Xiz4sKHhM0UJ1NKKoFVx6ZEI8JqgANlrZ8KwCJ2j9pOmJN-e50-HzVhTFRvEahjCJB51O4oMmJ25V2yQtYOGfxV2b7C2aT9VKBruh0_znTbORz66pu9P47DMB5aP4SuF/s320/Hokky1.png" style="float:left;clear:none;margin-right:50px " height=100 width=200 /> </td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2">Hoky Bangunan</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2">Alamat Jalan Merbabu 2, Salatiga</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2">Telp: 085725361818</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td colspan="8">Laporan Sales Order</td>
+                    
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>Start Date :</td>
+                    <td>20-Apr-22</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>Nama : </td>
+                    <td>Dewa</td>
+                </tr>
+                <tr>
+                    <td>End Date : </td>
+                    <td>20-Apr-22</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>Tanggal Cetak :</td>
+                    <td>22-Nov-22</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                  <tr style="border: 1px solid black">
+                      <th>SO Code</th>
+                      <th>Address</th>
+                      <th>Total Barang</th>
+                      <th>Harga Total</th>
+                      <th>Diskon Total</th>
+                      <th>Harga ongkir</th>
+                      <th>Harga Payment</th>
+                      <th>Keterangan</th>
+                  </tr>
+                  ${items}
+                </tbody>
+                
+            </table>
+            `;
+            var ctx = {
+              worksheet: name || 'Worksheet',
+              imgsrc1: imgsrc1,
+              heading: heading,
+              table: table
+            }
+            var blob = new Blob([format(template, ctx)]);
+            return blob;
           }
-        });
-        const ws = XLSX.utils.json_to_sheet(apiData);
-        const fileType ="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8";
-        const fileExtension = ".xlsx";
-        const wb = { Sheets: { data: ws }, SheetNames: ["data"] };
-        const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        const data = new Blob([excelBuffer], { type: fileType });
-        FileSaver.saveAs(data, fileName + fileExtension);
+        })()
+        var blobURL = tableToExcel('account_table', 'data_order');
+        FileSaver.saveAs(blobURL, fileName+'.xls');
+       
       })
       .catch(function (error) {
         console.log(error);
