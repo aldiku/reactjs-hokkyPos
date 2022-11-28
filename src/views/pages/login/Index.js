@@ -79,6 +79,7 @@ function Login() {
 	};
 
 	const setMsgAlert = (str) => {
+		setIsSpinner(false);
 		setAlert(<SweetAlert error showConfirm confirmBtnText="Ok" title={str} onCancel={hideAlert} onConfirm={hideAlert} />);
 	};
 
@@ -117,6 +118,8 @@ function Login() {
 					localStorage.setItem("authority", data.role);
 					// localStorage.setItem("previllage", privilegs.privileges[0]);
 					localStorage.setItem("allinfo", JSON.stringify(privilegs));
+
+					window.location.href = "/admin/dashboard";
 					resolve();
 				});
 		});
@@ -148,29 +151,15 @@ function Login() {
 		axios
 			.post(`${process.env.REACT_APP_API_BASE_URL}/users/website/login`, body)
 			.then(function (response) {
-				if (response.data.error) {
-					showErrors(response.data.error);
-					return;
-				}
-				if (response.data.errors) {
-					showErrorsEmail(response.data.errors);
-					return;
-				}
-				window.localStorage.setItem("token", response.data.response.token);
-				getMyProfil();
-				// setTimeout(() => history.push("/admin/dashboard"), 1000);
-				setTimeout(() => (window.location.href = "/admin/dashboard"), 8000);
+					window.localStorage.setItem("token", response.data.response.token);
+					getMyProfil();
 			})
 			.catch(function (error) {
-				setMsgAlert(error.message);
-				console.log(error);
+				setMsgAlert(error.response.data.message);
+				console.log(error.response.data.message);
+				showErrors(error.response.data.response);
 			});
 	}
-
-	const showErrorsEmail = (error) => {
-		setEmailError("invalid");
-		setWrongEmail(error.usernameOrEmail);
-	};
 
 	const showErrors = (error) => {
 		setEmailError("invalid");
@@ -189,7 +178,16 @@ function Login() {
 
 	useEffect(() => {
 		getRememberMe();
+		cekLoged();
 	}, []);
+
+	const cekLoged = () =>{
+		const token = localStorage.token;
+		if(token){
+			setIsSpinner(true);
+			getMyProfil();
+		}
+	}
 
 	const getRememberMe = () => {
 		if (cekRememberMe === "true") {
