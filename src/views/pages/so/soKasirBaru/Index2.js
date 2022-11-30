@@ -187,8 +187,6 @@ export default function CreateSalesOrder() {
 	  }
 
 	useEffect(() => {
-		getCustomer();
-		getBank();
 		getPajak();
 	}, []);
 
