@@ -5,6 +5,14 @@ import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
 import SimpleHeader from "components/Headers/SimpleHeader.js";
 import { Br, Cut, Line, Printer, Text} from 'react-thermal-printer';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select from '@mui/material/Select';
+import Autocomplete from '@mui/material/Autocomplete';
+import CircularProgress from '@mui/material/CircularProgress';
 
 export default function CreateSalesOrder() {
 	const token = localStorage.token;
@@ -17,7 +25,7 @@ export default function CreateSalesOrder() {
 	const [totalPrice, setTotalPrice] = useState(0);
 	const redirectPrefix1 = `/cetak/invoice-so/cetak/`;
 	const [barcode, setBarcode] = useState("");
-	const [pengiriman, setPengiriman] = useState([]);
+	const [pengiriman, setPengiriman] = useState(1);
 	const [customers, setCustomers] = useState([]);
 	const [customer, setCustomer] = useState("");
 	const [payment_method1, setPaymentMethod1] = useState([]);
@@ -29,7 +37,7 @@ export default function CreateSalesOrder() {
 	const [active, setActive] = useState(0);
 	const [filtered, setFiltered] = useState([]);
 	const [qty, setQty] = useState(1);
-	const [payment_method, setPaymentMethod] = useState([]);
+	const [payment_method, setPaymentMethod] = useState('1');
 	const [pay1, setPay1] = useState(0);
 	const [pay2, setPay2] = useState(0);
 	const [change, setChange] = useState(0);
@@ -46,7 +54,7 @@ export default function CreateSalesOrder() {
 	const [alamatlain, setAlamatLain] = useState("");
 	const [diskonglobalnominal, setDiskonGlobalNominal] = useState(0);
 	const [diskonglobalpersen,setDiskonGlobalPersen] = useState(0);
-	const [pajak, setPajak] = useState(1);
+	const [pajak, setPajak] = useState('0');
 	const [allpajak, setAllPajak] = useState([]);
 	const [sales, setSales] = useState("");
 	const [itemIdd, setItemIdd] = useState("");
@@ -56,10 +64,44 @@ export default function CreateSalesOrder() {
 	const [ppnnew, setPPNNEW] = useState(0);
 	const [diskonglobal, setDiskonGLobal] = useState(0);
     const [totalPrice1, setTotalPrice1] = useState(0);
-	const headers = { Authorization: `Bearer ${token}` };
+	const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
     const [diskonglobalnominal1,setDiskonGlobalNominal1] = useState(0)
     const [a, setA] = useState(0);
 	const [b, setB] = useState(0);
+	const [open, setOpen] = useState(false);
+	const [options, setOptions] = useState([]);
+	const loading = open && options.length === 0;
+	
+	useEffect(() => {
+		if (!open) {
+		  setOptions([]);
+		}
+	  }, [open]);
+	
+	useEffect(() => {
+		let active = true;
+
+		if (!loading) {
+			return undefined;
+		}
+
+		(async () => {
+			axios
+				.get(`${process.env.REACT_APP_API_BASE_URL}/customer/list`, { headers })
+				.then((data) => {
+					if (active) {
+						setOptions(data.data.response);
+					}
+				})
+				.catch(function (error) {
+					console.log(error);
+				});
+		})();
+
+		return () => {
+			active = false;
+		};
+	}, [loading]);
 
     useEffect(() => {
 		setDiskonGlobalNominal1(diskonglobalnominal);
@@ -109,44 +151,40 @@ export default function CreateSalesOrder() {
 	}, [pajak]);
 
 	const getById = () => {
-	    const headers = {
-	      "Content-Type": "application/json",
-	      Authorization: `Bearer ${token}`,
-	    };
-	    axios
-	      .get(
-	        `${process.env.REACT_APP_API_BASE_URL}/pajak/${pajak}`,
-	        { headers }
-	      )
-	      .then((data) => {;
-	        setPPN(data.data.response.persentase);
-	      })
-	      .catch(function (error) {
-	        console.log(error);
-	      });
-	  };
+		if(pajak >= 1){
+			axios
+				.get(
+				`${process.env.REACT_APP_API_BASE_URL}/pajak/${pajak}`,
+				{ headers }
+				)
+				.then((data) => {;
+				setPPN(data.data.response.persentase);
+				})
+				.catch(function (error) {
+				console.log(error);
+				});
+		  };
+		}
 
       useEffect(() => {
         getById2();
 	}, [customer]);
 
 	const getById2 = () => {
-	    const headers = {
-	      "Content-Type": "application/json",
-	      Authorization: `Bearer ${token}`,
-	    };
-	    axios
-	      .get(
-	        `${process.env.REACT_APP_API_BASE_URL}/customer/get/${customer}`,
-	        { headers }
-	      )
-	      .then((data) => {
-            setAlamatCustomer(data.data.response.address)
-	      })
-	      .catch(function (error) {
-	        console.log(error);
-	      });
-	  };
+		if(customer != ''){
+			axios
+			  .get(
+				`${process.env.REACT_APP_API_BASE_URL}/customer/get/${customer}`,
+				{ headers }
+			  )
+			  .then((data) => {
+				setAlamatCustomer(data.data.response.address)
+			  })
+			  .catch(function (error) {
+				console.log(error);
+			  });
+		}
+	  }
 
 	useEffect(() => {
 		getCustomer();
@@ -155,10 +193,6 @@ export default function CreateSalesOrder() {
 	}, []);
 
 	const getPajak = (id) => {
-		const headers = {
-			"Content-Type": "application/json",
-			Authorization: `bearer ${token}`,
-		};
 		axios
 			.get(`${process.env.REACT_APP_API_BASE_URL}/pajak/list`, { headers })
 			.then((data) => {
@@ -170,86 +204,95 @@ export default function CreateSalesOrder() {
 			});
 	};
 
-	const getCustomer = () => {
-		const headers = {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${token}`,
-		};
-		axios
-			.get(`${process.env.REACT_APP_API_BASE_URL}/customer/list`, { headers })
-			.then((data) => {
-				setCustomers(data.data.response);
-			})
-			.catch(function (error) {
-				console.log(error);
-			});
-	};
+	// const getCustomer = () => {
+	// 	const headers = {
+	// 		"Content-Type": "application/json",
+	// 		Authorization: `Bearer ${token}`,
+	// 	};
+	// 	axios
+	// 		.get(`${process.env.REACT_APP_API_BASE_URL}/customer/list`, { headers })
+	// 		.then((data) => {
+	// 			setCustomers(data.data.response);
+	// 		})
+	// 		.catch(function (error) {
+	// 			console.log(error);
+	// 		});
+	// };
 
-	const getBank = () => {
-		const headers = {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${token}`,
-		};
-		axios
-			.get(`${process.env.REACT_APP_API_BASE_URL}/bank/get-by-wh/${warehouse}`, { headers })
-			.then((data) => {
-				setBanks(data.data.response);
-			})
-			.catch(function (error) {
-				console.log(error);
-			});
-	};
+	// const getBank = () => {
+	// 	const headers = {
+	// 		"Content-Type": "application/json",
+	// 		Authorization: `Bearer ${token}`,
+	// 	};
+	// 	axios
+	// 		.get(`${process.env.REACT_APP_API_BASE_URL}/bank/get-by-wh/${warehouse}`, { headers })
+	// 		.then((data) => {
+	// 			setBanks(data.data.response);
+	// 		})
+	// 		.catch(function (error) {
+	// 			console.log(error);
+	// 		});
+	// };
 
-	const saveItem = () => {
-
-				const diskonnominal = 0 ;
-				const diskonpersen = 0 ;
-				const qtyy = 1;
-				const headers = {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				};
-				axios
-					.get(
-						`${process.env.REACT_APP_API_BASE_URL}/items-by-barcode?barcode=${barcode}&warehouse_id=${warehouse}&qty=${qtyy}
-                        `,{headers}
-					)
-					.then(async (response) => {
-						let stateItem = [];
-						await Promise.all(
-							response.data.response.map(async (data) => {
+	function numeric(string){
+		return new Intl.NumberFormat().format(string.toString().replace(/\D/g,''))+ ',-';
+	}
+	const saveItem = (e) => {
+		const diskonnominal = 0 ;
+		const diskonpersen = 0 ;
+		const qtyy = 1;
+		if(barcode != ''){
+			axios
+				.get(
+					`${process.env.REACT_APP_API_BASE_URL}/items-by-barcode?barcode=${barcode}&warehouse_id=${warehouse}&qty=${qtyy}
+					`,{headers}
+				)
+				.then(async (response) => {
+					let stateItem = [];
+					await Promise.all(
+						response.data.response.map(async (data) => {
+							const find = savedItems.find((item) => item.item_id === data.id);
+							if(find){
+								setSavedItems(savedItems => {
+									const newState = savedItems.map(obj => {
+									  if (obj.item_id === data.id) {
+										return {...obj, qty: obj.qty+1};
+									  }
+									  return obj;
+									});
+									return newState;
+								});
+							}else{
 								stateItem = [
 									...savedItems,
 									{
 										item_id: data.id,
 										item_name: data.item_name,
-                    					barcode: barcode,
+										barcode: barcode,
 										qty: qtyy,
 										diskon_nominal : diskonnominal,
 										diskon_persen:  diskonpersen,
-										harga: data.harga,
-										data: {
-											item_name: data.item_name,
-											harga: data.harga,
-											diskon_nominal : diskonnominal,
-											diskon_persen: diskonpersen,
-                      						qty: qtyy,
-										},
+										harga: data.harga
 									},
 								];
 								let stateEditing = [...editingItem, {
 									editing: false
 								}];
 								setEditingitem(stateEditing);
-								setTotalPrice(totalPrice + data.harga * qty - data.diskon_nominal);
 								setSavedItems(stateItem);
-							})
+							}
+						})
 						);
+					})
+					.catch(error => {
+						console.log(error);
 					});
+		}
 	  }
 
-	  const searchh = async () => {
-		if (Number(queryy) > 0) {
+	
+	const searchh = async () => {
+		if (Number(queryy) > 2) {
 			const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/items`, { item_name: queryy , warehouse_id: parseInt(warehouse),  }, { headers });
 			if (res.data.status !== 404) setAllItemm(res.data);
 			else {
@@ -270,68 +313,19 @@ export default function CreateSalesOrder() {
 		setIsSearchShoww(false);
 	};
 
-	  useEffect(() => {
-        saveItem1();
-	}, [itemIdd]);
 	
-	const saveItem1 = () => {
-			const diskonnominal = 0 ;
-			const diskonpersen = 0 ;
-			const qtyy = 1;
-			const headers = {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
-			};
-			axios
-				.get(
-					`${process.env.REACT_APP_API_BASE_URL}/items-by-price?item_id=${itemIdd}&qty=${qtyy}
-	                `,
-					{ headers }
-				)
-				.then(async (response) => {
-					let stateItem = [];
-					await Promise.all(
-						response.data.response.map(async (data) => {
-							stateItem = [
-								...savedItems,
-								{
-									item_id: itemIdd,
-									item_name: data.item_name,
-									barcode: data.barcode,
-									qty: qtyy,
-									diskon_nominal : diskonnominal,
-									diskon_persen:  diskonpersen,
-									harga: data.harga,
-									data: {
-										item_name: data.item_name,
-										harga: data.harga,
-                                        barcode: data.barcode,
-										diskon_nominal : diskonnominal,
-										diskon_persen: diskonpersen,
-										qty: qtyy,
-									},
-								},
-							];
-							let stateEditing = [...editingItem, {
-								editing: false
-							}];
-							setEditingitem(stateEditing);
-							setTotalPrice(totalPrice + data.harga * qty - data.diskon_nominal);
-							setSavedItems(stateItem);
-						})
-					);
-				});
-	}
-
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		{
 			saveItem();
 			setBarcode("");
-			saveItem1();
 			setQueryy("");
 			setIsSearchShoww("");
 		}
+	};
+
+	const handleSubmitOngkir = async (e) => {
+		e.preventDefault();
 	};
 
 	const deleteItem = (id) => {
@@ -342,7 +336,6 @@ export default function CreateSalesOrder() {
 		});
 	
 		if (index !== -1) {
-			setTotalPrice(totalPrice - array[index].harga * array[index].qty - array[index].diskon_nominal);
 			array.splice(index, 1);
 			setSavedItems(array);
 		}
@@ -357,8 +350,6 @@ export default function CreateSalesOrder() {
 	}
 	
 	const changeItemDataTable = async (arg) => {
-		setTotalPrice(totalPrice + arg.harga * savedItems[arg.index].qty - savedItems[arg.index].diskon_nominal);
-	
 		setSavedItems([
 			...savedItems.slice(0, arg.index),
 			Object.assign({}, savedItems[arg.index], {
@@ -380,6 +371,31 @@ export default function CreateSalesOrder() {
 		return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(money);
 	};
 
+	function totalSemua(){
+		var tot = 0;
+		for (let i = 0; i < savedItems.length; i++) {
+			tot += savedItems[i].qty*savedItems[i].harga;
+		} 
+		return tot;
+	}
+
+	function totalDiskon(){
+		var tot = 0;
+		for (let i = 0; i < savedItems.length; i++) {
+			tot += savedItems[i].qty*savedItems[i].harga+savedItems[i].diskon_persen/100;
+		} 
+		return tot;
+	}
+
+	function totalPajak(){
+
+		return totalSemua()*pajak/100;
+	}
+
+	function totalGrand(){
+		return totalSemua()+totalPajak()-totalDiskon()+ongkir;
+	}
+
 	return (
 		<>
 			<SimpleHeader name="Cashier" parentName="SO" />
@@ -389,516 +405,334 @@ export default function CreateSalesOrder() {
 						<Card className="bg-secondary shadow">
 							<CardBody>
 								<Row>
-									<Col xs={6} className="mb-3">
-										<textarea
-											className="form-control"
-											disabled
-											style={{
-												fontWeight: 'bold',
-												fontSize: 50,
-												paddingTop: 20,
-												top: "50%",
-												height: 117,
-												resize: "none",
-											}}
-											value={"Rp." + grandtotal.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,") + ",-"}></textarea>
+									<Col md={8}>
+										<div className="mb-2">
+												<Box component="form" sx={{'& > :not(style)': { width: '100%' },}} noValidate autoComplete="off" onSubmit={handleSubmit} className="row">
+													<Col md={6} className="d-flex align-items-center">
+													<i className="fa fa-barcode mr-2"></i>
+														<TextField id="bybarcode" className="col"
+														label="Barcode" variant="outlined" autoFocus size="small" 
+														value={barcode}
+														onChange={(e) => {
+															setBarcode(e.target.value);
+														}}/>
+													</Col>
+													<Col md={6} className="d-flex align-items-center">
+													<i className="fa fa-search mr-2"></i>
+														<TextField id="byname" label="Cari dengan nama" variant="outlined" 
+														className="col" size="small" 
+														onKeyDown={searchh}
+														value={queryy}
+														onChange={(e) => setQueryy(e.target.value)}/>
+														{isSearchShoww && queryy && (
+															<Card className="position-sticky boxShadow" style={{ maxHeight: "15.5rem", overflowY: "auto", paddingTop: "1rem", position: "relative" }}>
+																<div style={{ position: "absolute", top: "2.5px", right: "1rem", cursor: "pointer", fontSize: "1rem" }}>
+																	<i className="fas fa-window-close text-danger" onClick={() => setIsSearchShoww(false)}></i>
+																</div>
+																{allItemm?.response ? (
+																	allItemm.response.map((item) => (
+																		<CardBody key={item.id} style={{ minHeight: "5rem", padding: "1rem" }} className="bgSearch" onClick={() => searchShoww(item)}>
+																			<div>
+																				<b>Nama item:</b> {item.item_name}
+																			</div>
+																		</CardBody>
+																	))
+																) : (
+																	<div className="text-center mb-3 text-danger">Item "{queryy}" tidak ada bosku!</div>
+																)}
+															</Card>
+														)}
+													</Col>
+												</Box>
+										</div>
+										<div className="border border-primary rounded" style={{minHeight: 400, overflowY: 'scroll'}}>
+										<Table>
+											<thead>
+												<tr>
+													<th className="px-1">Nama Item</th>
+													<th className="px-1">Qty</th>
+													<th className="px-1">Diskon %</th>
+													<th className="px-1">Diskon (N)</th>
+													<th className="px-1">Sub Total</th>
+													<th className="px-1">#</th>
+												</tr>
+											</thead>
+												<tbody>
+												{
+													savedItems.map((savedItem, key) => {
+														return (
+															<tr key={key}>
+																<td>{savedItem.item_name} <br></br>{formatRupiah(savedItem.harga)}</td>
+																<td>
+																	{editingItem[key].editing ? (
+																			<Input
+																			className="form-control-alternative"
+																				placeholder="qty"
+																				type="number"
+																				value={savedItems[key].qty}
+																				onChange={(e) => {
+																					setSavedItems([
+																						...savedItems.slice(0, key),
+																						Object.assign({}, savedItems[key], { qty: e.target.value, totalPrice: savedItem.harga * e.target.value }),
+																						...savedItems.slice(key + 1)
+																					]);
+																				}}
+																			/>
+																	) : (
+																		<>{savedItem.qty}</>
+																	)}
+																</td>
+																<td>
+																	{editingItem[key].editing ? (
+																		<Input
+																		className="form-control-alternative"
+																			placeholder="Diskon Persen"
+																			type="number"
+																			value={savedItems[key].diskon_persen}
+																			onChange={(e) => {
+																				setSavedItems([
+																					...savedItems.slice(0, key),
+																					Object.assign({}, savedItems[key], { diskon_persen: e.target.value, totalPrice: savedItem.harga * savedItem.qty / e.target.value}),
+																					...savedItems.slice(key + 1)
+																				]);
+																			}}
+																		/>
+																	) : (
+																		<>{savedItem.diskon_persen}</>
+																	)}
+																</td>
+																<td>
+																	{editingItem[key].editing ? (
+																		<Input
+																		className="form-control-alternative"
+																			placeholder="Diskon nominal"
+																			type="number"
+																			value={savedItems[key].diskon_nominal}
+																			onChange={(e) => {
+																				setSavedItems([
+																					...savedItems.slice(0, key),
+																					Object.assign({}, savedItems[key], { diskon_nominal: e.target.value, totalPrice: savedItem.harga * savedItem.qty - e.target.value }),
+																					...savedItems.slice(key + 1)
+																				]);
+																			}}
+																		/>
+																	) : (
+																		<>{formatRupiah(savedItem.diskon_nominal)}</>
+																	)}
+																</td>
+																<td>
+																	{editingItem[key].editing ? (
+																		<Input
+																		className="form-control-alternative"
+																			placeholder="Total"
+																			type="number"
+																			value={savedItems[key].totalPrice}
+																			disabled
+																		/>
+																	) : (
+																		<>{formatRupiah(savedItem.harga * savedItem.qty - savedItem.diskon_nominal)}</>
+																	)}
+																</td>
+																<td>
+																	{editingItem[key].editing ? (
+																		<>
+																			<Button className="btn-xs" color="warning" onClick={() => changeItemDataTable({
+																				index: key,
+																				itemName: savedItem.item_name,
+																				qty: savedItem.qty,
+																				harga : savedItem.harga,
+																				diskon_nominal: savedItem.diskon_nominal,
+																				diskon_persen: savedItem.diskon_persen,
+																			})}><i className="fa fa-save"></i></Button>
+																			<Button className="btn-xs" color="danger" onClick={() => {
+																				setSavedItems([
+																					...savedItems.slice(0, key),
+																					Object.assign({}, savedItems[key], { 
+																						itemName: savedItem.item_name,
+																						harga: savedItem.harga,  
+																						diskon_nominal: savedItem.diskon_nominal, 
+																						diskon_persen: savedItem.diskon_persen,  
+																						qty: savedItem.qty,}),
+																					...savedItems.slice(key + 1)
+																				]);
+
+																				changePriceStatus(key, false);
+																			}}><i className="fa fa-times"></i></Button>
+																		</>
+																	) : (
+																		<>
+																			<Button className="btn-xs" color="warning" onClick={() => changePriceStatus(key, true)}><i className="fa fa-edit"></i></Button>
+																			<Button className="btn-xs" color="danger" onClick={() => deleteItem(savedItem.item_id)}><i className="fa fa-trash"></i></Button>
+																		</>
+																	)}
+																</td>
+															</tr>
+														)
+													})
+												}
+												</tbody>
+										</Table>
+										</div>
 									</Col>
-									<Col xs={3}>
-										<Label>
-											<b>SHIFT : "{name}"</b>
-										</Label>
-									</Col>
-									<Col xs={3} className="mb-3">
-										<Button
-											style={{
-												fontSize: 40,
-												paddingTop: 10,
-												height: 80,
-												resize: "none",
-												}}  
-											block 
-											color="primary" 
-											onClick={() => setIsOpen(!isOpen)}>
-												Bayar
-										</Button>
-									</Col>
-								</Row>
-								<Form onSubmit={handleSubmit}>
-									<Row className="mb-3">
-									<Col xs={3}>
-												<Input
-                                                	autoComplete="off"
-                                                    // className="form-control-alternative" 
-                                                    name="customer"
-                                                    placeholder="Masukan Barcode"
-                                                    type="text"
-                                                    value={barcode}
-                                                    onChange={(e) => {
-                                                        setBarcode(e.target.value);
-                                                    }}  
-												/>
-											</Col>
-										<Col xs={3}>
-											<InputGroup>
-												<Input
-                                                	autoComplete="off"
-													placeholder="Masukan Item"
-													type="search"
-													onKeyDown={searchh}
-													value={queryy}
-													onChange={(e) => setQueryy(e.target.value)}
-												/>
-												<Button type="submit"><i className="fa fa-search" /></Button>
-											</InputGroup>
-											{isSearchShoww && queryy && (
-											<Card className="position-sticky boxShadow" style={{ maxHeight: "15.5rem", overflowY: "auto", paddingTop: "1rem", position: "relative" }}>
-												<div style={{ position: "absolute", top: "2.5px", right: "1rem", cursor: "pointer", fontSize: "1rem" }}>
-													<i className="fas fa-window-close text-danger" onClick={() => setIsSearchShoww(false)}></i>
+									<Col md={4}>
+										<div className="card text-center p-2 mb-2">
+											<div className="text-muted fs-10">Customer</div>
+											<div className="d-flex">
+												<div className="col">
+												<Autocomplete
+													id="asyc-customer"
+													sx={{ width: '100%' }}
+													size="small"
+													open={open}
+													onOpen={() => {
+														setOpen(true);
+													}}
+													onClose={() => {
+														setOpen(false);
+													}}
+													isOptionEqualToValue={(option, value) => option.name === value.id}
+													getOptionLabel={(option) => option.name}
+													options={options}
+													loading={loading}
+													onChange={(event, value) => {
+														console.log(value);
+														setCustomer(value);
+													}}
+													renderInput={(params) => (
+														<TextField
+														{...params}
+														label="Customer"
+														InputProps={{
+															...params.InputProps,
+															endAdornment: (
+															<React.Fragment>
+																{loading ? <CircularProgress color="inherit" size={20} /> : null}
+																{params.InputProps.endAdornment}
+															</React.Fragment>
+															),
+														}}
+														/>
+													)}
+													/>
 												</div>
-												{allItemm?.response ? (
-													allItemm.response.map((item) => (
-														<CardBody key={item.id} style={{ minHeight: "5rem", padding: "1rem" }} className="bgSearch" onClick={() => searchShoww(item)}>
-															<div>
-                                                                <b>Nama item:</b> {item.item_name}
-															</div>
-														</CardBody>
-													))
-												) : (
-													<div className="text-center mb-3 text-danger">Item "{queryy}" tidak ada bosku!</div>
-												)}
-											</Card>
-										)}
-										</Col>
-										<Col xs={3}>
-											<Input
-                                            autoComplete="off" 
-												// className="form-control-alternative" 
-												name="customer"
-												placeholder="Masukan Nama Sales"
-												type="text"
-												value={sales}
+												<Button
+													onClick={() =>
+														history.push({
+															pathname: `/admin/customer/create`,
+														})
+													}
+													className="btn-sm"
+													color="info"
+													type="button">
+													<i className="fa fa-plus" />
+												</Button>
+											</div>
+										</div>
+										<hr className="my-3"/>
+										<Box className="my-2">
+											<FormControl fullWidth size="small">
+												<InputLabel id="demo-simple-select-label">Pajak</InputLabel>
+												<Select
+												labelId="demo-simple-select-label"
+												id="demo-simple-select"
+												value={pajak}
+												label="Pajak"
 												onChange={(e) => {
-													setSales(e.target.value);
-												}} 
-											/>
-										</Col>
-										<Col xs={3}>
-											<Link className="btn btn-danger mb-3" to="/admin/kasir-sales-order/detail">
-												Closing Cashsier
-											</Link>
-										</Col>
-									</Row>
-								</Form>
-								<Row className="mb-3">
-									<Col xs={3}>
-										<InputGroup>
-										<Input 
-                                        autoComplete="off" 
-											// className="form-control-alternative"
-											name="customer"
-											type="select"
-											value={customer}
-											onChange={(e) => {
-												setCustomer(e.target.value);
-											}}>
-											<option value="" disabled selected hidden>Pilih Customer</option>
-											{customers.map((customer, key) => {
-												return (
-													<option key={key} value={customer.id}>
-														{customer.name}
-													</option>
-												);
-											})}
-										</Input>
-										<Button
-											onClick={() =>
-												history.push({
-													pathname: `/admin/customer/create`,
-												})
-											}
-											color="secondary"
-											type="button">
-											<i className="ni ni-fat-add" />
-										</Button>
-										</InputGroup>
-									</Col>
-									<Col xs={3}>
-										<Input 
-                                        autoComplete="off" 
-											// className="form-control-alternative"
-											placeholder="Masukan Alamat Customer"
-											name="Tipe Request"
-											type="text"
-											value={alamatcustomer}
-											onChange={(e) => {
-												setAlamatCustomer(e.target.value);
-											}}
-											/>
-									</Col>
-                                    {/* {jenisTransaksi === 2 && ( */}
-									<Col xs={3}>
-										<Input
-                                        autoComplete="off" 
-											// className="form-control-alternative" 
-											name="customer"
-											placeholder="Masukan Alamat Kirim "
-											type="text"
-											value={alamatlain}
-											onChange={(e) => {
-												setAlamatLain(e.target.value);
-											}}
-										/>
-									</Col>
-                                    {/* )} */}
-								</Row>
-								<Row className="mb-3">
-									{/* <Col xs={0.3}>
-										<Label
-											for="exampleEmail"
-											sm={2}
-										>
-											%
-										</Label>
-									</Col> */}
-									<Col xs={3}>
-									<Label style={{ color: "darkgray", fontSize: "14px" }}>Diskon (persen) :</Label>
-									<InputGroup>
-											<InputGroupText>
-											 %
-											</InputGroupText>
-										<Input
-                                        	autoComplete="off" 
-											name="customer"
-											placeholder="Masukan Diskon (%)"
-											type="text"
-											disabled={totalPrice < 1000}
-											value={diskonglobalpersen}
-											onChange={(e) => {
-												setDiskonGlobalPersen(e.target.value);
-											}} 
-											onClick={() => setDiskonGLobal("diskonglobalpersen")} 
-										/>
-										</InputGroup>
-									</Col>
-									<Col xs={3}>
-									<Label style={{ color: "darkgray", fontSize: "14px" }}>Diskon (Nominal) :</Label>
-										<InputGroup>
-											<InputGroupText>
-											Rp
-											</InputGroupText>
-											<Input 
-												autoComplete="off" 
-												name="customer"
-												disabled={totalPrice < 1000}
-												placeholder="Masukan Diskon (N)"
-												type="text"
-												value={diskonglobalnominal}
-												onChange={(e) => {
-													setDiskonGlobalNominal(e.target.value);
+													setPajak(e.target.value);
 												}}
-												onClick={() => setDiskonGLobal("diskonglobalnominal")} 
-											/>
-										</InputGroup>
-									</Col>
-									<Col xs={3}>
-									<Label style={{ color: "darkgray", fontSize: "14px" }}>Pajak :</Label>
-                                    <Input 
-                                    autoComplete="off" 
-											// className="form-control-alternative"
-											name="customer"
-											type="select"
-											value={pajak}
-											onChange={(e) => {
-												setPajak(e.target.value);
-											}}>
-											<option value="" disabled selected hidden>Pilih PPN</option>
-											{allpajak.map((customer, key) => {
-												return (
-													<option key={key} value={customer.id}>
-														{customer.keterangan}
-													</option>
-												);
-											})}
-										</Input>
-									</Col>
-								</Row>
-								<Row className="mb-3">
-										<Col xs={3}>
-											<Input 
-                                            autoComplete="off" 
-												// className="form-control-alternative"
-												name="Tipe Po"
-												type="select"
+												>
+													<MenuItem value={0}>NON PPN</MenuItem>
+													<MenuItem value={11}>PPN</MenuItem>
+												</Select>
+											</FormControl>
+										</Box>
+										<Box className="my-2">
+											<FormControl fullWidth size="small">
+												<InputLabel id="paymtd">Jenis Transaksi</InputLabel>
+												<Select
+												labelId="paymtd"
+												id="jenistrx"
 												value={payment_method}
 												onChange={(e) => {
 													setPaymentMethod(e.target.value);
-												}}>
-												<option value="" selected disabled hidden>Jenis Transaksi</option>
-												<option value={1} >
-													Tunai
-												</option>
-												<option value={3} >
-													Inden DP
-												</option>
-												<option value={4} >
-													Inden Lunas
-												</option>
-											</Input>
-										</Col>
-										<Col xs={3}>
-											<Input 
-                                            autoComplete="off" 
-												// className="form-control-alternative"
-												name="Tipe Request"
-												type="select"
+												}}
+												label="Jenis Transaksi"
+												>
+													<MenuItem value={1}>Tunai</MenuItem>
+													<MenuItem value={3}>Inden DP</MenuItem>
+													<MenuItem value={4}>Inden Lunas</MenuItem>
+												</Select>
+											</FormControl>
+										</Box>
+										<Box className="my-2">
+											<FormControl fullWidth size="small">
+												<InputLabel id="pengiriman-sel">Pengiriman</InputLabel>
+												<Select
+												labelId="pengiriman-sel"
+												id="pengiriman"
 												value={pengiriman}
 												onChange={(e) => {
 													setPengiriman(e.target.value);
-												}}>
-												<option value="" selected disabled hidden>Pilih Pengiriman</option>
-												<option value={1}>Ambil Sendiri</option>
-												<option value={2} onClick={() => setJenisTransaksi(2)}>
-													Delivery
-												</option>
-												<option value={3}>Kurir</option>
-											</Input>
-										</Col>
-										<Col xs={3}>
-										<InputGroup>
-											<InputGroupText>
-											 Ongkir
-											</InputGroupText>
-											<Input 
-												autoComplete="off" 
-												name="Tipe Request"
-												type="number"
-												value={ongkir}
-												onChange={(e) => {
-													setOngkir(e.target.value);
-												}} />
-											</InputGroup>
-										</Col>
-								</Row>
-								<br></br>
-								<br></br>
-								<br></br>
-								<Table>
-									<thead>
-										<tr>
-											<th>Nama Item</th>
-											<th>Harga</th>
-											<th>Qty</th>
-											<th>Diskon %</th>
-											<th>Diskon (N)</th>
-											<th>Sub Total</th>
-											<th></th>
-										</tr>
-									</thead>
-										<tbody>
-										{
-											savedItems.map((savedItem, key) => {
-												return (
-													<tr key={key}>
-														<td>{savedItem.data.item_name}</td>
-														<td>{formatRupiah(savedItem.data.harga)}</td>
-														<td>
-															{editingItem[key].editing ? (
-																	<Input
-																	className="form-control-alternative"
-																		placeholder="qty"
-																		type="number"
-																		value={savedItems[key].qty}
-																		onChange={(e) => {
-																			setSavedItems([
-																				...savedItems.slice(0, key),
-																				Object.assign({}, savedItems[key], { qty: e.target.value, totalPrice: savedItem.data.harga * e.target.value }),
-																				...savedItems.slice(key + 1)
-																			]);
-																		}}
-																	/>
-															) : (
-                                                                <>{savedItem.qty}</>
-                                                            )}
-														</td>
-														<td>
-															{editingItem[key].editing ? (
-																<Input
-																className="form-control-alternative"
-																	placeholder="Diskon Persen"
-																	type="number"
-																	value={savedItems[key].diskon_persen}
-																	onChange={(e) => {
-																		setSavedItems([
-																			...savedItems.slice(0, key),
-																			Object.assign({}, savedItems[key], { diskon_persen: e.target.value, totalPrice: savedItem.data.harga * savedItem.qty / e.target.value}),
-																			...savedItems.slice(key + 1)
-																		]);
-																	}}
-																/>
-															) : (
-                                                                <>{savedItem.diskon_persen}</>
-                                                            )}
-														</td>
-														<td>
-															{editingItem[key].editing ? (
-																<Input
-																className="form-control-alternative"
-																	placeholder="Diskon nominal"
-																	type="number"
-																	value={savedItems[key].diskon_nominal}
-																	onChange={(e) => {
-																		setSavedItems([
-																			...savedItems.slice(0, key),
-																			Object.assign({}, savedItems[key], { diskon_nominal: e.target.value, totalPrice: savedItem.data.harga * savedItem.qty - e.target.value }),
-																			...savedItems.slice(key + 1)
-																		]);
-																	}}
-																/>
-															) : (
-                                                                <>{formatRupiah(savedItem.diskon_nominal)}</>
-                                                            )}
-														</td>
-														<td>
-															{editingItem[key].editing ? (
-																<Input
-																className="form-control-alternative"
-																	placeholder="Total"
-																	type="number"
-																	value={savedItems[key].totalPrice}
-																	disabled
-																/>
-															) : (
-																<>{formatRupiah(savedItem.data.harga * savedItem.qty - savedItem.diskon_nominal)}</>
-                                                            )}
-														</td>
-														<td>
-															{editingItem[key].editing ? (
-																<>
-																	<Button color="warning" onClick={() => changeItemDataTable({
-																		index: key,
-																		itemName: savedItem.data.item_name,
-																		qty: savedItem.data.qty,
-																		harga : savedItem.data.harga,
-																		diskon_nominal: savedItem.data.diskon_nominal,
-																		diskon_persen: savedItem.data.diskon_persen,
-																	})}>Update</Button>
-																	<Button color="danger" onClick={() => {
-																		setSavedItems([
-																			...savedItems.slice(0, key),
-																			Object.assign({}, savedItems[key], { 
-																				itemName: savedItem.data.item_name,
-																				harga: savedItem.data.harga,  
-																				diskon_nominal: savedItem.data.diskon_nominal, 
-																				diskon_persen: savedItem.data.diskon_persen,  
-																				qty: savedItem.data.qty,}),
-																			...savedItems.slice(key + 1)
-																		]);
-
-																		changePriceStatus(key, false);
-																	}}>Cancel</Button>
-																</>
-															) : (
-                                                                <>
-                                                                    {/* <Button color="warning" onClick={() => changePriceStatus(key, true)}>Edit</Button> */}
-                                                                    <Button color="danger" onClick={() => deleteItem(savedItem.item_id)}>Delete</Button>
-                                                                </>
-                                                            )}
-														</td>
-													</tr>
-												)
-											})
+												}}
+												label="Pengiriman"
+												>
+													<MenuItem value={1} onClick={()=>{setOngkir(0)}}>Ambil Sendiri</MenuItem>
+													<MenuItem value={2}>Delivery</MenuItem>
+													<MenuItem value={3}>Kurir</MenuItem>
+												</Select>
+											</FormControl>
+										</Box>
+										{ (pengiriman >= 2 ) ? 
+											(
+												<Box component="form" sx={{'& > :not(style)': { width: '100%' },}} noValidate autoComplete="off" onSubmit={handleSubmitOngkir}>
+															<TextField id="ongkir" label="Ongkir" variant="outlined" 
+															type='number'
+															size="small" 
+															value={ongkir}
+															onChange={(e) => {
+																setOngkir(e.target.value);
+															}}/>
+													</Box>
+											) : (<></>)
 										}
-										</tbody>
-								</Table>
-							</CardBody>
-							<CardFooter >
-								<Row md="12">
-									<Col md="4">
-									</Col>
-									<Col md="4">
-										<FormGroup row>
-										<Label
-											for="exampleEmail"
-											sm={4}
-											size="small"
-										>
-											<b>Total</b>
-										</Label>
-										<Col sm={6}>
-										<Input
-										className="form-control-alternative"
-											disabled
-											style={{fontWeight: 'bold'}}
-											type="text"
-											name="barcode"
-											placeholder="Harga Total"
-											// value={totalPrice1}
-											value={"Rp." + totalPrice1.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,") + ",-"}
-											/>
-										</Col>
-										</FormGroup>
-										<FormGroup row>
-										<Label
-											for="exampleEmail"
-											sm={4}
-										>
-											<b>Total Diskon</b>
-										</Label>
-										<Col sm={6}>
-										<Input
-											className="form-control-alternative"
-											style={{fontWeight: 'bold'}}
-											disabled
-											type="text"
-											name="barcode"
-											placeholder="Total Diskon"
-											value={"Rp." + totaldiskon1.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,") + ",-"}
-											/>
-										</Col>
-										</FormGroup>
-										<FormGroup row>
-										<Label
-											for="exampleEmail"
-											sm={4}
-										>
-											<b>PPN</b>
-										</Label>
-										<Col sm={6}>
-										<Input
-											className="form-control-alternative"
-											disabled
-											style={{fontWeight: 'bold'}}
-											type="text"
-											name="barcode"
-											placeholder="PPN"
-											value={"Rp." + ppnnew.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,") + ",-"}
-											/>
-										</Col>
-										</FormGroup>
-										<FormGroup row>
-										<Label
-											for="exampleEmail"
-											sm={4}
-										>
-											<b>Grand Total</b>
-										</Label>
-										<Col sm={6}>
-										<Input
-										className="form-control-alternative"
-											disabled
-											type="text"
-											name="barcode"
-											style={{fontWeight: 'bold'}}
-											placeholder="Grand Total"
-											value={"Rp." + grandtotal.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,") + ",-"}
-											/>
-										</Col>
-										</FormGroup>
-									</Col>
-									<Col md="4">
+										<div className="d-flex justify-content-between">
+											<div className="fs-12">Sub Total</div>
+											<div className="fs-12 fw-bold">Rp. {numeric(totalSemua())}</div>
+										</div>
+										<div className="d-flex justify-content-between">
+											<div className="fs-12">Diskon</div>
+											<div className="fs-12 fw-bold">Rp. {numeric(totalDiskon())}</div>
+										</div>
+										<div className="d-flex justify-content-between">
+											<div className="fs-12">Pajak PPN</div>
+											<div className="fs-12 fw-bold">Rp. {numeric(totalPajak())}</div>
+										</div>
+										<div className="d-flex justify-content-between">
+											<div className="fs-12">Ongkir</div>
+											<div className="fs-12 fw-bold">Rp. {numeric(ongkir)}</div>
+										</div>
+										<div className="bg-light p-2 rounded">
+											<div className="text-center fs-10">Grand Total</div>
+											<div className="d-flex justify-content-between">
+												<div className="h1">Rp.</div>
+												<div className="h1">{numeric(totalGrand())}</div>
+											</div>
+										</div>
+										<div className="d-flex justify-content-between my-1">
+											<Link className="btn btn-danger" to="/admin/kasir-sales-order/detail">
+												Closing Cashsier
+											</Link>
+											<Button
+												className="col"
+												color="primary" 
+												onClick={() => setIsOpen(!isOpen)}>
+													Bayar
+											</Button>
+										</div>
+										<hr className="my-3"/>
 									</Col>
 								</Row>
-								</CardFooter>
+							</CardBody>
 						</Card>
 					</div>
 				</Row>
@@ -1006,7 +840,7 @@ export default function CreateSalesOrder() {
 								<textarea
 									className="form-control"
 									disabled
-									value={"Rp." + grandtotal.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,") + ",-"}
+									value={"Rp." + numeric(grandtotal)}
 									style={{
 										fontSize: 40,
 										paddingTop: 20,
@@ -1024,7 +858,7 @@ export default function CreateSalesOrder() {
 								<textarea
 									className="form-control"
 									disabled
-									value={"Rp." + (-1 * parseInt(grandtotal) + parseInt(pay1) + parseInt(pay2)).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,") + ",-"}
+									value={"Rp." + numeric(-1 * parseInt(grandtotal) + parseInt(pay1) + parseInt(pay2))}
 									style={{
 										fontSize: 40,
 										paddingTop: 20,
