@@ -431,7 +431,7 @@ export default function CreateSalesOrder() {
 														value={queryy}
 														onChange={(e) => setQueryy(e.target.value)}/>
 														{isSearchShoww && queryy && (
-															<Card className="position-absolute boxShadow" style={{ top:"50px",maxHeight: "15.5rem", overflowY: "auto", paddingTop: "1rem", position: "relative" }}>
+															<Card className="position-absolute boxShadow" style={{ top:"50px",maxHeight: "15.5rem", zIndex:'1',overflowY: "auto", paddingTop: "1rem", position: "relative" }}>
 																<div style={{ position: "absolute", top: "2.5px", right: "1rem", cursor: "pointer", fontSize: "1rem" }}>
 																	<i className="fas fa-window-close text-danger" onClick={() => setIsSearchShoww(false)}></i>
 																</div>
@@ -446,7 +446,7 @@ export default function CreateSalesOrder() {
 																		</CardBody>
 																	))
 																) : (
-																	<div className="text-center mb-3 text-danger">Item "{queryy}" tidak ada bosku!</div>
+																	<CircularProgress color="inherit" size={20} />
 																)}
 															</Card>
 														)}
