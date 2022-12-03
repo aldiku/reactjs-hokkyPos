@@ -1,5 +1,5 @@
 /*eslint-disable*/
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useRef } from "react";
 import { Card, CardBody, Row, Col, Input, Container,CardFooter,InputGroupText,FormGroup, Form, Table, Button,InputGroup, Label, Modal, ModalHeader, ModalBody, ModalFooter } from "reactstrap";
 import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
@@ -25,6 +25,7 @@ export default function CreateSalesOrder() {
 	const [totalPrice, setTotalPrice] = useState(0);
 	const redirectPrefix1 = `/cetak/invoice-so/cetak/`;
 	const [barcode, setBarcode] = useState("");
+	const inputBarcode = useRef(null);
 	const [pengiriman, setPengiriman] = useState(1);
 	const [customers, setCustomers] = useState([]);
 	const [customer, setCustomer] = useState("");
@@ -71,7 +72,7 @@ export default function CreateSalesOrder() {
 	const [open, setOpen] = useState(false);
 	const [options, setOptions] = useState([]);
 	const loading = open && options.length === 0;
-	
+
 	useEffect(() => {
 		if (!open) {
 		  setOptions([]);
@@ -102,6 +103,18 @@ export default function CreateSalesOrder() {
 			active = false;
 		};
 	}, [loading]);
+
+	useEffect(() => {
+		const getData = setTimeout(async() => {
+			if(queryy != ''){
+				setIsSearchShoww(true);
+				const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/items`, { item_name: queryy , warehouse_id: parseInt(warehouse),  }, { headers });
+				if (res.data.status !== 404) setAllItemm(res.data);
+			}
+		  }, 500)
+	  
+		  return () => clearTimeout(getData)
+	}, [queryy]);
 
     useEffect(() => {
 		setDiskonGlobalNominal1(diskonglobalnominal);
@@ -235,7 +248,7 @@ export default function CreateSalesOrder() {
 	function numeric(string){
 		return new Intl.NumberFormat().format(string.toString().replace(/\D/g,''))+ ',-';
 	}
-	const saveItem = (e) => {
+	const saveItem = (barcode) => {
 		const diskonnominal = 0 ;
 		const diskonpersen = 0 ;
 		const qtyy = 1;
@@ -262,7 +275,6 @@ export default function CreateSalesOrder() {
 								});
 							}else{
 								stateItem = [
-									...savedItems,
 									{
 										item_id: data.id,
 										item_name: data.item_name,
@@ -271,13 +283,15 @@ export default function CreateSalesOrder() {
 										diskon_nominal : diskonnominal,
 										diskon_persen:  diskonpersen,
 										harga: data.harga
-									},
+									},...savedItems
 								];
 								let stateEditing = [...editingItem, {
 									editing: false
 								}];
 								setEditingitem(stateEditing);
 								setSavedItems(stateItem);
+								setBarcode("");
+								inputBarcode.current.focus();
 							}
 						})
 						);
@@ -289,22 +303,12 @@ export default function CreateSalesOrder() {
 	  }
 
 	
-	const searchh = async () => {
-		if (Number(queryy) > 2) {
-			const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/items`, { item_name: queryy , warehouse_id: parseInt(warehouse),  }, { headers });
-			if (res.data.status !== 404) setAllItemm(res.data);
-			else {
-				const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/items`, { item_code: queryy, warehouse_id: parseInt(warehouse), }, { headers });
-				if (res.data.status !== 404) setAllItemm(res.data);
-				else setAllItemm(null);
-			}
-		} else {
-			const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/items`, { id: queryy, warehouse_id: parseInt(warehouse), }, { headers });
-			if (res.data.status !== 404) setAllItemm(res.data);
-			else setAllItemm(null);
-		}
-		setIsSearchShoww(true);
-	};
+	const searchh = (obj) => {
+		setBarcode(obj.barcode);
+		saveItem(obj.barcode);
+		setIsSearchShoww(false);
+		setQueryy("");
+	}
 
 	const searchShoww = (item) => {
 		setItemIdd(item.id);
@@ -315,11 +319,8 @@ export default function CreateSalesOrder() {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		{
-			saveItem();
+			saveItem(barcode);
 			setBarcode("");
-			setQueryy("");
-			setIsSearchShoww("");
-			console.log('barcode',barcode);
 		}
 	};
 
@@ -381,18 +382,22 @@ export default function CreateSalesOrder() {
 	function totalDiskon(){
 		var tot = 0;
 		for (let i = 0; i < savedItems.length; i++) {
-			tot += savedItems[i].qty*savedItems[i].harga+savedItems[i].diskon_persen/100;
+			tot += savedItems[i].qty*savedItems[i].harga*savedItems[i].diskon_persen/100;
 		} 
 		return tot;
 	}
 
 	function totalPajak(){
-
-		return totalSemua()*pajak/100;
+		return totalSemua()*ppn/100;
 	}
 
 	function totalGrand(){
-		return totalSemua()+totalPajak()-totalDiskon()+ongkir;
+		var total = 0;
+		total += totalSemua();
+		total += totalPajak();
+		total += parseInt(ongkir);
+		total -= totalDiskon();
+		return total;
 	}
 
 	return (
@@ -412,6 +417,7 @@ export default function CreateSalesOrder() {
 															<TextField id="bybarcode" className="col"
 															label="Barcode" variant="outlined" autoFocus size="small" 
 															value={barcode}
+															ref={inputBarcode}
 															onChange={(e) => {
 																setBarcode(e.target.value);
 															}}/>
@@ -419,21 +425,23 @@ export default function CreateSalesOrder() {
 											</div>
 											<div className="col-md-6 d-flex align-items-center">
 													<i className="fa fa-search mr-2"></i>
+													
 														<TextField id="byname" label="Cari dengan nama" variant="outlined" 
 														className="col" size="small" 
-														onKeyDown={searchh}
 														value={queryy}
 														onChange={(e) => setQueryy(e.target.value)}/>
 														{isSearchShoww && queryy && (
-															<Card className="position-sticky boxShadow" style={{ maxHeight: "15.5rem", overflowY: "auto", paddingTop: "1rem", position: "relative" }}>
+															<Card className="position-absolute boxShadow" style={{ top:"50px",maxHeight: "15.5rem", overflowY: "auto", paddingTop: "1rem", position: "relative" }}>
 																<div style={{ position: "absolute", top: "2.5px", right: "1rem", cursor: "pointer", fontSize: "1rem" }}>
 																	<i className="fas fa-window-close text-danger" onClick={() => setIsSearchShoww(false)}></i>
 																</div>
 																{allItemm?.response ? (
 																	allItemm.response.map((item) => (
 																		<CardBody key={item.id} style={{ minHeight: "5rem", padding: "1rem" }} className="bgSearch" onClick={() => searchShoww(item)}>
-																			<div>
-																				<b>Nama item:</b> {item.item_name}
+																			<div onClick={() => {
+																				searchh(item);
+																			}}>
+																				<b>{item.item_name}</b> - {new Intl.NumberFormat().format(item.price)}
 																			</div>
 																		</CardBody>
 																	))
@@ -571,6 +579,7 @@ export default function CreateSalesOrder() {
 												}
 												</tbody>
 										</Table>
+										
 										</div>
 									</Col>
 									<Col md={4}>
