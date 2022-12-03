@@ -54,7 +54,7 @@ export default function CreateSalesOrder() {
 	const [alamatlain, setAlamatLain] = useState("");
 	const [diskonglobalnominal, setDiskonGlobalNominal] = useState(0);
 	const [diskonglobalpersen,setDiskonGlobalPersen] = useState(0);
-	const [pajak, setPajak] = useState('0');
+	const [pajak, setPajak] = useState('2');
 	const [allpajak, setAllPajak] = useState([]);
 	const [sales, setSales] = useState("");
 	const [itemIdd, setItemIdd] = useState("");
@@ -195,7 +195,7 @@ export default function CreateSalesOrder() {
 			.get(`${process.env.REACT_APP_API_BASE_URL}/pajak/list`, { headers })
 			.then((data) => {
 				setAllPajak(data.data.response);
-				setPajak(id);
+				// setPajak(id);
 			})
 			.catch(function (error) {
 				console.log(error);
@@ -319,6 +319,7 @@ export default function CreateSalesOrder() {
 			setBarcode("");
 			setQueryy("");
 			setIsSearchShoww("");
+			console.log('barcode',barcode);
 		}
 	};
 
@@ -404,18 +405,19 @@ export default function CreateSalesOrder() {
 							<CardBody>
 								<Row>
 									<Col md={8}>
-										<div className="mb-2">
-												<Box component="form" sx={{'& > :not(style)': { width: '100%' },}} noValidate autoComplete="off" onSubmit={handleSubmit} className="row">
-													<Col md={6} className="d-flex align-items-center">
-													<i className="fa fa-barcode mr-2"></i>
-														<TextField id="bybarcode" className="col"
-														label="Barcode" variant="outlined" autoFocus size="small" 
-														value={barcode}
-														onChange={(e) => {
-															setBarcode(e.target.value);
-														}}/>
-													</Col>
-													<Col md={6} className="d-flex align-items-center">
+										<div className="row mb-2">
+											<div className="col-md-6 d-flex align-items-center">
+												<i className="fa fa-barcode mr-2"></i>
+												<Box component="form" sx={{'& > :not(style)': { width: '100%' },}} noValidate autoComplete="off" onSubmit={handleSubmit} className="col px-0">
+															<TextField id="bybarcode" className="col"
+															label="Barcode" variant="outlined" autoFocus size="small" 
+															value={barcode}
+															onChange={(e) => {
+																setBarcode(e.target.value);
+															}}/>
+												</Box>
+											</div>
+											<div className="col-md-6 d-flex align-items-center">
 													<i className="fa fa-search mr-2"></i>
 														<TextField id="byname" label="Cari dengan nama" variant="outlined" 
 														className="col" size="small" 
@@ -440,8 +442,7 @@ export default function CreateSalesOrder() {
 																)}
 															</Card>
 														)}
-													</Col>
-												</Box>
+											</div>
 										</div>
 										<div className="border border-primary rounded" style={{minHeight: 400, overflowY: 'scroll'}}>
 										<Table>
@@ -594,7 +595,7 @@ export default function CreateSalesOrder() {
 													loading={loading}
 													onChange={(event, value) => {
 														console.log(value);
-														setCustomer(value);
+														setCustomer(value.id);
 													}}
 													renderInput={(params) => (
 														<TextField
@@ -639,8 +640,8 @@ export default function CreateSalesOrder() {
 													setPajak(e.target.value);
 												}}
 												>
-													<MenuItem value={0}>NON PPN</MenuItem>
-													<MenuItem value={11}>PPN</MenuItem>
+													<MenuItem value={2}>NON PPN</MenuItem>
+													<MenuItem value={1}>PPN</MenuItem>
 												</Select>
 											</FormControl>
 										</Box>
