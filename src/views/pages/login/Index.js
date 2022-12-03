@@ -121,6 +121,10 @@ function Login() {
 
 					window.location.href = "/admin/dashboard";
 					resolve();
+				})
+				.catch(function (error) {
+					setMsgAlert(error.response.data.message);
+					console.log(error.response.data.message);
 				});
 		});
 
