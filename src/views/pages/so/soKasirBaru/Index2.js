@@ -848,7 +848,7 @@ export default function CreateSalesOrder() {
 								<textarea
 									className="form-control"
 									disabled
-									value={"Rp." + numeric(grandtotal)}
+									value={"Rp." + numeric(totalGrand())}
 									style={{
 										fontSize: 40,
 										paddingTop: 20,
@@ -866,7 +866,7 @@ export default function CreateSalesOrder() {
 								<textarea
 									className="form-control"
 									disabled
-									value={"Rp." + numeric(-1 * parseInt(grandtotal) + parseInt(pay1) + parseInt(pay2))}
+									value={"Rp." + numeric(-1 * parseInt(totalGrand()) + parseInt(pay1) + parseInt(pay2))}
 									style={{
 										fontSize: 40,
 										paddingTop: 20,
